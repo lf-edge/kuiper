@@ -342,7 +342,9 @@ func (o *DecodeOp) PayloadBatchDecodeWorker(ctx api.StreamContext, item any) []a
 			delete(val.(map[string]any), o.c.PayloadField)
 			mergeTuple(ctx, r, val)
 			mergeTuple(ctx, r, result)
+			ctx.GetLogger().Infof("merge : %v", result)
 		}
+		ctx.GetLogger().Infof("merge result: %v", r)
 		return []any{r}
 	default:
 		return []any{fmt.Errorf("unsupported data received: %v", d)}

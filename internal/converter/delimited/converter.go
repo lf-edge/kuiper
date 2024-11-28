@@ -76,7 +76,10 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 			if i > 0 {
 				sb.WriteString(c.Delimiter)
 			}
-			p, _ := cast.ToString(m[v], cast.CONVERT_ALL)
+			p, err := cast.ToString(m[v], cast.CONVERT_ALL)
+			if err != nil {
+				ctx.GetLogger().Warnf("fail to convert %s field %v to string: %v", v, m[v], err)
+			}
 			sb.WriteString(p)
 		}
 		return sb.Bytes(), nil

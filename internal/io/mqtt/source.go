@@ -17,6 +17,7 @@ package mqtt
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
@@ -114,10 +115,10 @@ func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesInge
 }
 
 func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message, ingest api.BytesIngest) {
-	if msg != nil {
-		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
-	}
 	rcvTime := timex.GetNow()
+	if msg != nil {
+		ctx.GetLogger().Infof("Received message %s from topic %s", hex.EncodeToString(msg.Payload()), msg.Topic())
+	}
 	if ms.eof != nil && ms.eofPayload != nil && bytes.Equal(ms.eofPayload, msg.Payload()) {
 		ms.eof(ctx)
 		return

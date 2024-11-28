@@ -79,6 +79,7 @@ func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 
 func tupleCopy(ctx api.StreamContext, converter message.Converter, st any, message any) []any {
 	raw, err := converter.Encode(ctx, message)
+	ctx.GetLogger().Infof("encode to %s", string(raw))
 	if err != nil {
 		return []any{err}
 	} else {
