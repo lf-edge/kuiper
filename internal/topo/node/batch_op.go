@@ -130,7 +130,7 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 		if b.hasHeader && b.rawHeader == nil {
 			newlineIndex := bytes.IndexByte(input.Raw(), '\n')
 			if newlineIndex != -1 {
-				b.rawHeader = input.Raw()[:newlineIndex]
+				b.rawHeader = input.Raw()[:newlineIndex+1]
 				ctx.GetLogger().Infof("Get new header")
 			} else {
 				ctx.GetLogger().Infof("No header found")
