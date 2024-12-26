@@ -331,7 +331,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		ds                  ast.Dimensions
 	)
 
-	streamStmts, analyticFuncs, analyticFieldFuncs, err := decorateStmt(stmt, store)
+	streamStmts, analyticFuncs, analyticFieldFuncs, err := decorateStmt(stmt, store, opt)
 	if err != nil {
 		return nil, err
 	}

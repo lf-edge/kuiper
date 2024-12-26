@@ -98,7 +98,7 @@ var tests = []struct {
 		r:   newErrorStruct(""),
 	},
 	{ // 10
-		sql: `SELECT sum(temp) as temp1, count(temp) as temp FROM src1`,
+		sql: `SELECT count(temp) as temp, sum(temp) as temp1 FROM src1`,
 		r:   newErrorStruct("invalid argument for func sum: aggregate argument is not allowed"),
 	},
 	{ // 11
@@ -198,7 +198,6 @@ func TestCheckTopoSort(t *testing.T) {
 }
 
 func Test_validation(t *testing.T) {
-	tests[10].r = newErrorStruct("invalid argument for func sum: aggregate argument is not allowed")
 	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
@@ -311,9 +310,6 @@ func Test_validationSchemaless(t *testing.T) {
 			SendError:          true,
 		}, store)
 		serr := tt.r.Serr()
-		if tt.sql == "SELECT sum(temp) as temp1, count(temp) as temp FROM src1" {
-			serr = ""
-		}
 		require.Equal(t, serr, testx.Errstring(err))
 	}
 }

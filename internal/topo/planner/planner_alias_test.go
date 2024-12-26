@@ -245,14 +245,15 @@ func TestPlannerAlias(t *testing.T) {
 			continue
 		}
 		p, _ := createLogicalPlan(stmt, &def.RuleOption{
-			IsEventTime:        false,
-			LateTol:            0,
-			Concurrency:        0,
-			BufferLength:       0,
-			SendMetaToSink:     false,
-			Qos:                0,
-			CheckpointInterval: 0,
-			SendError:          true,
+			IsEventTime:          false,
+			LateTol:              0,
+			Concurrency:          0,
+			BufferLength:         0,
+			SendMetaToSink:       false,
+			Qos:                  0,
+			CheckpointInterval:   0,
+			SendError:            true,
+			PlanOptimizeStrategy: &def.PlanOptimizeStrategy{},
 		}, kv)
 		if !reflect.DeepEqual(tt.p, p) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))

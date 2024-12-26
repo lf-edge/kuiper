@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -33,7 +34,7 @@ type streamInfo struct {
 
 // Analyze the select statement by decorating the info from stream statement.
 // Typically, set the correct stream name for fieldRefs
-func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*ast.Call, []*ast.Call, error) {
+func decorateStmt(s *ast.SelectStatement, store kv.KeyValue, opt *def.RuleOption) ([]*streamInfo, []*ast.Call, []*ast.Call, error) {
 	streamsFromStmt := xsql.GetStreams(s)
 	streamStmts := make([]*streamInfo, len(streamsFromStmt))
 	isSchemaless := false
@@ -51,10 +52,10 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			isSchemaless = true
 		}
 	}
-	if checkAliasReferenceCycle(s) {
+	if opt.PlanOptimizeStrategy.IsAliasRefCalEnable() && checkAliasReferenceCycle(s) {
 		return nil, nil, nil, fmt.Errorf("select fields have cycled alias")
 	}
-	if !isSchemaless {
+	if !isSchemaless && opt.PlanOptimizeStrategy.IsAliasRefCalEnable() {
 		if err := aliasFieldTopoSort(s, streamStmts); err != nil {
 			return nil, nil, nil, err
 		}
@@ -120,21 +121,22 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 				AliasRef:   ar,
 			}
 			walkErr = fieldsMap.save(f.AName, ast.AliasStream, ar)
-			for _, subF := range s.Fields {
-				if f.AName == subF.AName {
-					continue
-				}
-				ast.WalkFunc(&subF, func(node ast.Node) bool {
-					switch fr := node.(type) {
-					case *ast.FieldRef:
-						if fr.Name == f.AName && fr.StreamName == streamName {
-							fr.StreamName = ast.AliasStream
-							fr.AliasRef = ar
-						}
-						return false
+			if opt.PlanOptimizeStrategy.IsAliasRefCalEnable() {
+				for _, subF := range s.Fields {
+					if f.AName == subF.AName {
+						continue
 					}
-					return true
-				})
+					ast.WalkFunc(&subF, func(node ast.Node) bool {
+						switch fr := node.(type) {
+						case *ast.FieldRef:
+							if fr.Name == f.AName && fr.StreamName == streamName {
+								fr.StreamName = ast.AliasStream
+								fr.AliasRef = ar
+							}
+						}
+						return true
+					})
+				}
 			}
 		}
 	}
