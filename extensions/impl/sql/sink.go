@@ -298,7 +298,7 @@ func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error
 		s.needReconnect = true
 		return errorx.NewIOErr(err.Error())
 	}
-	SQLHist.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+	SQLDurationHist.WithLabelValues(LblRequest, metrics.LblSinkIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	s.needReconnect = false
 	d, err := r.RowsAffected()
 	if err != nil {

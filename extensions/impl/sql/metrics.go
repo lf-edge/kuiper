@@ -34,10 +34,15 @@ var (
 		Help:      "counter of SQL IO",
 	}, []string{metrics.LblType, metrics.LblIOType, metrics.LblRuleIDType, metrics.LblOpIDType})
 
-	SQLHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	SQLDurationHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "kuiper",
 		Subsystem: "io",
 		Name:      "sql_duration",
 		Help:      "Historgram of Kafka IO",
 	}, []string{metrics.LblType, metrics.LblIOType, metrics.LblRuleIDType, metrics.LblOpIDType})
 )
+
+func init() {
+	prometheus.MustRegister(SQLCounter)
+	prometheus.MustRegister(SQLDurationHist)
+}

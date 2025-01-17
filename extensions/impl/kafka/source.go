@@ -194,7 +194,7 @@ func (k *KafkaSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, i
 			ingestError(ctx, err)
 			continue
 		}
-		KafkaCounter.WithLabelValues(LblMessage, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Inc()
+		KafkaCounter.WithLabelValues(LblMessage, metrics.LblSourceIO, metrics.LblSuccess, ctx.GetRuleId(), ctx.GetOpId()).Inc()
 		ingest(ctx, msg.Value, nil, timex.GetNow())
 	}
 }

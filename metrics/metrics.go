@@ -27,7 +27,16 @@ const (
 	LblRuleStop    = "stop"
 	LblSourceIO    = "source"
 	LblSinkIO      = "sink"
+	LblException   = "err"
+	LblSuccess     = "success"
 )
+
+func GetStatusValue(err error) string {
+	if err == nil {
+		return LblSuccess
+	}
+	return LblException
+}
 
 var (
 	RuleStatusCountGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{

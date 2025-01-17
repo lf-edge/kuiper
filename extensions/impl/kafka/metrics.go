@@ -21,9 +21,8 @@ import (
 )
 
 const (
-	LblRequest   = "req"
+	LblWriteMsgs = "write"
 	LblMessage   = "message"
-	LblException = "exception"
 )
 
 var (
@@ -32,12 +31,18 @@ var (
 		Subsystem: "io",
 		Name:      "kafka_count",
 		Help:      "counter of Kafka IO",
-	}, []string{metrics.LblType, metrics.LblIOType, metrics.LblRuleIDType, metrics.LblOpIDType})
+	}, []string{metrics.LblType, metrics.LblIOType, metrics.LblStatusType, metrics.LblRuleIDType, metrics.LblOpIDType})
 
-	KafkaHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	KafkaDurationHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "kuiper",
 		Subsystem: "io",
 		Name:      "kafka_duration",
 		Help:      "Historgram of Kafka IO",
+		Buckets:   prometheus.ExponentialBuckets(10, 2, 20), // 10us ~ 5s
 	}, []string{metrics.LblType, metrics.LblIOType, metrics.LblRuleIDType, metrics.LblOpIDType})
 )
+
+func init() {
+	prometheus.MustRegister(KafkaCounter)
+	prometheus.MustRegister(KafkaDurationHist)
+}

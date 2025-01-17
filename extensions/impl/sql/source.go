@@ -160,7 +160,7 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	failpoint.Inject("QueryErr", func() {
 		err = errors.New("QueryErr")
 	})
-	SQLHist.WithLabelValues(LblRequest, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
+	SQLDurationHist.WithLabelValues(LblRequest, metrics.LblSourceIO, ctx.GetRuleId(), ctx.GetOpId()).Observe(float64(time.Since(start).Microseconds()))
 	if err != nil {
 		logger.Errorf("query sql error %v", err)
 		s.needReconnect = true

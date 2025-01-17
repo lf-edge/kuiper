@@ -170,7 +170,6 @@ func findTemplateProps(props map[string]any) []string {
 func splitSink(tp *topo.Topo, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf, templates []string) ([]node.TopNode, error) {
 	index := 0
 	result := make([]node.TopNode, 0)
-	// Batch enabled
 	if sc.BatchSize > 0 || sc.LingerInterval > 0 {
 		batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
 		if err != nil {
