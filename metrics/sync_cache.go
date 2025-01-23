@@ -31,9 +31,17 @@ var (
 		Name:      "counter",
 		Help:      "counter of sync cache",
 	}, []string{LblType, LblRuleIDType, LblOpIDType})
+
+	SyncCacheGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "kuiper",
+		Subsystem: "sync_cache",
+		Name:      "gauge",
+		Help:      "gauge of sync cache",
+	}, []string{LblType, LblRuleIDType, LblOpIDType})
 )
 
 func RegisterSyncCache() {
 	prometheus.MustRegister(SyncCacheCounter)
 	prometheus.MustRegister(SyncCacheHist)
+	prometheus.MustRegister(SyncCacheGauge)
 }

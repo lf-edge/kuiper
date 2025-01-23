@@ -96,11 +96,12 @@ func (p *page) reset() {
 }
 
 const (
-	syncCacheAdd   = "add"
-	syncCachePop   = "pop"
-	syncCacheFlush = "flush"
-	syncCacheDrop  = "drop"
-	syncCacheLoad  = "load"
+	syncCacheLength = "length"
+	syncCacheAdd    = "add"
+	syncCachePop    = "pop"
+	syncCacheFlush  = "flush"
+	syncCacheDrop   = "drop"
+	syncCacheLoad   = "load"
 )
 
 type SyncCache struct {
@@ -150,6 +151,10 @@ func (c *SyncCache) SetupMeta(ctx api.StreamContext) {
 
 // AddCache not thread safe!
 func (c *SyncCache) AddCache(ctx api.StreamContext, item any) error {
+	defer func() {
+		metrics.SyncCacheCounter.WithLabelValues(syncCacheAdd, c.RuleID, c.OpID).Inc()
+		metrics.SyncCacheGauge.WithLabelValues(syncCacheLength, c.RuleID, c.OpID).Set(float64(c.CacheLength))
+	}()
 	isBufferNotFull := c.writeBufferPage.append(item)
 	if !isBufferNotFull { // cool page full, save to disk
 		err := c.appendWriteCache(ctx)
@@ -161,7 +166,6 @@ func (c *SyncCache) AddCache(ctx api.StreamContext, item any) error {
 	} else {
 		ctx.GetLogger().Debugf("added cache to disk buffer page %v", c.writeBufferPage)
 	}
-	metrics.SyncCacheCounter.WithLabelValues(syncCacheAdd, c.RuleID, c.OpID).Inc()
 	c.CacheLength++
 	ctx.GetLogger().Debugf("added cache %d", c.CacheLength)
 	return nil
@@ -204,6 +208,11 @@ func (c *SyncCache) appendWriteCache(ctx api.StreamContext) error {
 }
 
 func (c *SyncCache) insertReadCache(ctx api.StreamContext) error {
+	metrics.SyncCacheCounter.WithLabelValues(syncCacheFlush, c.RuleID, c.OpID).Inc()
+	start := time.Now()
+	defer func() {
+		metrics.SyncCacheHist.WithLabelValues(syncCacheFlush, c.RuleID, c.OpID).Observe(float64(time.Since(start).Microseconds()))
+	}()
 	// insert before current head
 	head := c.diskPageHead - 1
 	if head < 0 {
@@ -255,6 +264,7 @@ func (c *SyncCache) PopCache(ctx api.StreamContext) (any, bool) {
 	}
 	ctx.GetLogger().Debugf("deleted cache. CacheLength: %d, diskSize: %d, readPage: %v", c.CacheLength, c.diskSize, c.readBufferPage)
 	metrics.SyncCacheCounter.WithLabelValues(syncCachePop, c.RuleID, c.OpID).Inc()
+	metrics.SyncCacheGauge.WithLabelValues(syncCacheLength, c.RuleID, c.OpID).Set(float64(c.CacheLength))
 	return result, true
 }
 
