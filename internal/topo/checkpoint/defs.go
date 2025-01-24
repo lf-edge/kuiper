@@ -62,6 +62,7 @@ const (
 	STOP Message = iota
 	ACK
 	DEC
+	ForceSaveState
 )
 
 type Signal struct {

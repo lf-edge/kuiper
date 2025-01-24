@@ -1905,3 +1905,43 @@ func TestRuleWaitGroup(t *testing.T) {
 	tp.Cancel()
 	tp.WaitClose()
 }
+
+func TestRuleDumpState(t *testing.T) {
+	streamList := []string{"demo"}
+	HandleStream(false, streamList, t)
+	HandleStream(true, streamList, t)
+	id := "rule0991"
+	sql := "select color,size from demo"
+	rule := &def.Rule{
+		Id:  id,
+		Sql: sql,
+		Actions: []map[string]any{
+			{
+				"memory": map[string]any{
+					"topic":      id,
+					"sendSingle": false,
+				},
+			},
+		},
+		Options: &def.RuleOption{
+			BufferLength:              100,
+			Qos:                       def.AtLeastOnce,
+			CheckpointInterval:        cast.DurationConf(time.Second * 5),
+			EnableSaveStateBeforeStop: true,
+		},
+	}
+	tp, err := planner.Plan(rule)
+	require.NoError(t, err)
+	tp.Open()
+	time.Sleep(20 * time.Millisecond)
+	tp.Cancel()
+	tp.WaitClose()
+
+	tp2, err := planner.Plan(rule)
+	require.NoError(t, err)
+	tp2.Open()
+	time.Sleep(20 * time.Millisecond)
+	tp2.GetCoordinator().ActiveForceSaveState()
+	err = tp2.Cancel()
+	require.Error(t, err)
+}
