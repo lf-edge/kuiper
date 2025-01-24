@@ -134,17 +134,26 @@ func (m *GlobalServerManager) RegisterWebSocketEndpoint(ctx api.StreamContext, e
 	rTopic := recvTopic(endpoint, true)
 	sTopic := sendTopic(endpoint, true)
 	pubsub.CreatePub(rTopic)
-	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+	m.routes[endpoint] = func(w http.ResponseWriter, r *http.Request) {
 		c, err := m.upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			conf.Log.Errorf("websocket upgrade error: %v", err)
 			return
 		}
+		fmt.Printf("is context updated?: %p\n", ctx)
 		subCtx, cancel := ctx.WithCancel()
 		wg := m.AddEndpointConnection(endpoint, c, cancel)
 		go m.handleProcess(subCtx, endpoint, m.FetchInstanceID(), c, cancel, wg)
 		conf.Log.Infof("websocket endpint %v create connection", endpoint)
+	}
+	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+		if h, ok := m.routes[endpoint]; ok {
+			h(w, r)
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
 	})
+
 	conf.Log.Infof("websocker endpoint %v registered success", endpoint)
 	return rTopic, sTopic, nil
 }
@@ -163,6 +172,7 @@ func (m *GlobalServerManager) UnRegisterWebSocketEndpoint(endpoint string) *webs
 		cancel()
 	}
 	delete(m.websocketEndpoint, endpoint)
+	delete(m.routes, endpoint)
 	return wctx
 }
 

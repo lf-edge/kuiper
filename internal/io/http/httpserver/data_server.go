@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ type GlobalServerManager struct {
 	endpoint          map[string]string
 	server            *http.Server
 	router            *mux.Router
+	routes            map[string]http.HandlerFunc
 	upgrader          websocket.Upgrader
 	websocketEndpoint map[string]*websocketEndpointContext
 }
@@ -68,6 +69,7 @@ func InitGlobalServerManager(ip string, port int, tlsConf *conf.TlsConf) {
 		endpoint:          map[string]string{},
 		server:            s,
 		router:            r,
+		routes:            map[string]http.HandlerFunc{},
 		upgrader:          upgrader,
 	}
 	go func(m *GlobalServerManager) {
@@ -111,7 +113,7 @@ func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (
 		m.endpoint[key] = topic
 	}
 	pubsub.CreatePub(topic)
-	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+	m.routes[endpoint] = func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -121,6 +123,13 @@ func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (
 		pubsub.ProduceAny(topoContext.Background(), topic, data)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
+	}
+	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+		if h, ok := m.routes[endpoint]; ok {
+			h(w, r)
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}).Methods(method)
 	return topic, nil
 }
@@ -135,6 +144,7 @@ func (m *GlobalServerManager) UnregisterEndpoint(endpoint, method string) {
 		return
 	}
 	delete(m.endpoint, key)
+	delete(m.routes, endpoint)
 	pubsub.RemovePub(TopicPrefix + key)
 }
 
